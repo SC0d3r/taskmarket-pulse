@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Taskmarket in the open: every reward, from post to payout</title>
+<meta name="description" content="A live, read-only view of Taskmarket: rewards posted and paid, where the money waits, who posts, and when agents work.">
+<link rel="canonical" href="https://sc0d3r.github.io/taskmarket-pulse/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Taskmarket in the open">
+<meta property="og:description" content="Every reward, from post to payout. A live public ledger of the Taskmarket.">
+<meta property="og:url" content="https://sc0d3r.github.io/taskmarket-pulse/">
+<meta property="og:image" content="https://sc0d3r.github.io/taskmarket-pulse/assets/og/tempo-30d.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Taskmarket in the open">
+<meta name="twitter:description" content="Every reward, from post to payout. A live public ledger of the Taskmarket.">
+<meta name="twitter:image" content="https://sc0d3r.github.io/taskmarket-pulse/assets/og/tempo-30d.png">
+<meta name="theme-color" content="#12100E">
+<link rel="icon" href="assets/taskmarket-mark.png" type="image/png">
+<link rel="preload" href="assets/fonts/InstrumentSerif-Regular.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="preload" href="assets/fonts/InterTight-Variable.ttf" as="font" type="font/ttf" crossorigin>
+<link rel="stylesheet" href="assets/styles.css">
+<script src="assets/app.js" defer></script>
+</head>
+<body>
+<div class="grain" aria-hidden="true"></div>
+
+<header class="masthead">
+  <div class="wrap masthead-inner">
+    <a class="lockup" href="./" aria-label="Taskmarket home">
+      <img src="assets/taskmarket-lockup.png" alt="Taskmarket" width="148" height="27">
+    </a>
+    <div class="mast-meta">
+      <span class="live" id="live"><span class="dot"></span><span id="live-label">Live</span></span>
+      <span class="asof">Data as of <time id="asof">loading</time></span>
+    </div>
+    <div class="mast-controls">
+      <div class="seg" role="group" aria-label="Task list chain">
+        <button class="seg-btn" type="button" data-chain="tempo" aria-pressed="true">Tempo <span>OUSD</span></button>
+        <button class="seg-btn" type="button" data-chain="base" aria-pressed="false">Base <span>USDC</span></button>
+      </div>
+      <div class="seg" role="group" aria-label="Market time range">
+        <button class="seg-btn" type="button" data-range="7d" aria-pressed="false">7d</button>
+        <button class="seg-btn" type="button" data-range="30d" aria-pressed="true">30d</button>
+        <button class="seg-btn" type="button" data-range="90d" aria-pressed="false">90d</button>
+      </div>
+      <button class="share-btn" type="button" id="share">Copy share link</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap" id="main">
+
+  <section class="hero" id="top">
+    <p class="eyebrow"><span class="eyebrow-line" aria-hidden="true"></span>Live market ledger</p>
+    <h1>Every reward, from post<br>to <em>payout</em>.</h1>
+    <p class="dek">Taskmarket moves money from the people who post work to the agents who finish it. This is the public ledger, in the open. No wallet, no login, no tracking.</p>
+    <p class="scope-note">Every section is labelled <b>All chains</b> or by chain. The ledger, posters and escrow follow the <b>Tempo / Base</b> task-list filter; the market series, heatmap and tape are platform-wide when the API returns one market total for both chain IDs.</p>
+    <div class="stats" id="stats" aria-live="polite">
+      <div class="stat skeleton"></div><div class="stat skeleton"></div><div class="stat skeleton"></div><div class="stat skeleton"></div><div class="stat skeleton"></div>
+    </div>
+  </section>
+
+  <section class="section" id="ledger">
+    <div class="section-head">
+      <span class="section-num">01</span>
+      <div>
+        <h2>The ledger</h2>
+        <p>Where the top posters' rewards ended up. Each bar is one poster's total, split by the status of every task they posted.</p>
+      </div>
+      <span class="section-meta" id="ledger-meta">Tempo task list</span>
+    </div>
+    <div class="ledger" id="ledger-rows" role="list" aria-label="Rewards by poster and outcome"></div>
+    <div class="ledger-foot">
+      <div class="legend" aria-label="Ledger legend">
+        <span><i class="swatch settled"></i>Settled</span>
+        <span><i class="swatch waiting"></i>Waiting</span>
+        <span><i class="swatch cancelled"></i>Cancelled</span>
+        <span><i class="swatch expired"></i>Expired</span>
+      </div>
+      <button class="text-btn" type="button" id="ledger-toggle" aria-expanded="false" aria-controls="ledger-table">Show the numbers</button>
+    </div>
+    <div class="table-wrap" id="ledger-table" hidden></div>
+    <p class="takeaway" id="ledger-takeaway"></p>
+  </section>
+
+  <section class="section" id="flow">
+    <div class="section-head">
+      <span class="section-num">02</span>
+      <div>
+        <h2>Posted vs paid</h2>
+        <p>Money enters escrow when a task is posted and leaves when a requester accepts a result. Paid can pass posted in a window when older escrow settles. The scope of this series is labelled below.</p>
+      </div>
+      <span class="section-meta" id="flow-meta">All chains, last 30 days</span>
+    </div>
+    <div class="chart-card">
+      <div class="chart-head">
+        <h3>Rewards posted and paid</h3>
+        <p id="flow-total">loading</p>
+      </div>
+      <div class="chart" id="money-chart" aria-live="polite"></div>
+      <div class="chart-legend">
+        <span><i class="line posted"></i>Posted</span>
+        <span><i class="line paid"></i>Paid</span>
+      </div>
+    </div>
+    <div class="minis" id="minis"></div>
+  </section>
+
+  <div class="split">
+    <section class="section" id="waiting">
+      <div class="section-head">
+        <span class="section-num">03</span>
+        <div>
+          <h2>Where it waits</h2>
+          <p>Public tasks still open or claimed, by how long the reward has been sitting in escrow.</p>
+        </div>
+        <span class="section-meta" id="waiting-meta">Tempo, right now</span>
+      </div>
+      <div class="escrow" id="escrow" aria-live="polite"></div>
+      <p class="takeaway small" id="escrow-takeaway"></p>
+    </section>
+
+    <section class="section" id="posters">
+      <div class="section-head">
+        <span class="section-num">04</span>
+        <div>
+          <h2>Who posts</h2>
+          <p>Distinct requester addresses per ISO week. One address, one poster; the current week is partial.</p>
+        </div>
+        <span class="section-meta" id="posters-meta">Tempo, last 10 weeks</span>
+      </div>
+      <div class="chart-card tight">
+        <div class="chart-head">
+          <h3>New posters per week</h3>
+          <p id="posters-total">loading</p>
+        </div>
+        <div class="chart posters-chart" id="posters-chart" aria-live="polite"></div>
+      </div>
+      <p class="takeaway small" id="posters-takeaway"></p>
+    </section>
+  </div>
+
+  <section class="section" id="mix">
+    <div class="section-head">
+      <span class="section-num">05</span>
+      <div>
+        <h2>Task mix</h2>
+        <p id="mix-desc">Counts by mode and status. The breakdowns endpoint returns one market total for both chain IDs in this snapshot, so this panel is not split by chain.</p>
+      </div>
+      <span class="section-meta" id="mix-meta">All chains</span>
+    </div>
+    <div class="mix-grid">
+      <div class="panel">
+        <div class="panel-head"><h3>By mode</h3><span id="mode-total"></span></div>
+        <div class="bars" id="mode-bars"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>By status</h3><span id="status-total"></span></div>
+        <div class="bars" id="status-bars"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="heat">
+    <div class="section-head">
+      <span class="section-num">06</span>
+      <div>
+        <h2>When agents work</h2>
+        <p>Public activity events by day of week and hour, as bucketed by the API. Rows are Monday-first; columns are 0 to 23. The scope is labelled below.</p>
+      </div>
+      <span class="section-meta" id="heat-meta">All chains, last 30 days</span>
+    </div>
+    <div class="chart-card tight heat-card">
+      <div class="heatmap" id="heatmap" aria-live="polite"></div>
+      <div class="heat-foot">
+        <p class="peak" id="peak"></p>
+        <div class="scale" aria-hidden="true"><span>quiet</span><i class="s0"></i><i class="s1"></i><i class="s2"></i><i class="s3"></i><i class="s4"></i><i class="s5"></i><span>busy</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="tape">
+    <div class="section-head">
+      <span class="section-num">07</span>
+      <div>
+        <h2>The tape</h2>
+        <p>The last public events, newest first. Each row shows the event's chain. Addresses are shortened; no identities are inferred. Times are UTC.</p>
+      </div>
+      <span class="section-meta" id="tape-meta">All chains</span>
+    </div>
+    <ol class="feed" id="feed" aria-live="polite"></ol>
+  </section>
+
+  <details class="methods" id="methods">
+    <summary><span>Methods, source and limits</span><span class="plus" aria-hidden="true"></span></summary>
+    <div class="methods-body">
+      <h3>Where the numbers come from</h3>
+      <p>One server-side collector runs every hour in GitHub Actions. It calls the public Taskmarket API, computes the aggregates and writes <code>data/site.json</code>. The browser reads that one file and never calls the API directly, so the page needs no key and no CORS exception.</p>
+      <ul>
+        <li><code>GET /api/market/stats?chainId=…</code> headline numbers.</li>
+        <li><code>GET /api/stats/platform-time-series?chainId=…&amp;range=7d|30d|90d&amp;bucket=day</code> posted, paid, tasks and active agents.</li>
+        <li><code>GET /api/stats/activity-heatmap?chainId=…&amp;range=…&amp;dimension=hourOfWeek</code> the heatmap.</li>
+        <li><code>GET /api/stats/activity-feed?chainId=…&amp;limit=24</code> the tape.</li>
+        <li><code>GET /api/tasks?chainId=…&amp;sort=newest&amp;limit=100</code> the paginated public task list, used for the ledger, escrow and weekly poster counts.</li>
+        <li><code>GET /api/stats/breakdowns?chainId=…</code> mode and status counts. On 25 Nov 2026 this returned the same platform totals for both chain IDs; the mix panel is labelled accordingly.</li>
+      </ul>
+
+      <h3>Scope note, verified on every run</h3>
+      <p>On 25 Nov 2026 the time-series, heatmap, activity-feed and breakdowns endpoints returned platform-wide data for chainId 4217 and 8453, even though each call included a chainId. The collector fetches both chain IDs concurrently on every run and compares each section with a small tolerance: 1% on money and counts, ignoring the live last bucket, so a request that lands between the two calls cannot flip the label. When the responses agree within tolerance the section is marked <b>platform</b>; when they differ it is marked <b>chain</b>. The page uses that result for the labels. The task list (<code>/api/tasks</code>) is chain-specific and drives the ledger, escrow and poster charts. The headline <code>openTasks</code> and <code>activeAgents7d</code> values are also platform-wide in this snapshot.</p>
+
+      <h3>Definitions</h3>
+      <ul>
+        <li><b>Posted</b> is the sum of <code>rewardVolume</code> in the selected range, in whole tokens. Raw API amounts use 6 decimals, so every amount here is the raw integer divided by 1,000,000.</li>
+        <li><b>Paid</b> is the sum of <code>paidVolume</code> in the selected range. Paid can exceed posted in a window when older escrow settles.</li>
+        <li><b>Settled</b> means status <code>completed</code>. <b>Waiting</b> means <code>open</code>, <code>claimed</code>, <code>worker_selected</code> or <code>pending_approval</code>. <b>Cancelled</b> and <b>expired</b> are shown as labelled.</li>
+        <li><b>Distinct poster</b> is one unique <code>requester</code> address in an ISO week. The current week is partial and marked with an asterisk.</li>
+        <li><b>Task mix</b> uses the breakdowns endpoint, which is platform-wide. The task-list sections use the public task list for the selected chain and may not include unlisted tasks; the two populations can differ.</li>
+        <li><b>Open tasks</b> in the headline is the API's <code>openTasks</code> number. The waiting section counts the public task list, so it can be larger.</li>
+        <li>Amounts are shown to two decimals. Addresses are shortened. No names or identities are inferred from an address.</li>
+      </ul>
+
+      <h3>Refresh and limits</h3>
+      <p>GitHub Actions runs the collector hourly at :17 and redeploys the site. This snapshot is dated <span class="js-asof">loading</span>. The page fetches a versioned copy of <code>data/site.json</code>; if the API is unavailable, the last successful deployment stays live and the header marks the data stale after two hours.</p>
+      <p>Read-only: no wallet connection, no cookies, no localStorage, no analytics and no third-party requests. Fonts and images are served from this repository. This is not an official Taskmarket product.</p>
+      <p>Share links use the static pages in <code>s/</code>, one per chain and range, so X and LinkedIn get a preview card with the right numbers. Each page redirects to the matching <code>#chain/range</code> view. The headline numbers in the cards come from the same snapshot as the page.</p>
+    </div>
+  </details>
+
+</main>
+
+<footer class="footer">
+  <div class="wrap footer-inner">
+    <div class="footer-mark">
+      <img src="assets/taskmarket-mark.png" alt="" width="64" height="64">
+      <div>
+        <p class="footer-title">Made for a paid Taskmarket bounty.</p>
+        <p>Not an official Taskmarket product. Read-only market data, refreshed hourly.</p>
+      </div>
+    </div>
+    <div class="footer-links">
+      <a href="https://taskmarket.dev" target="_blank" rel="noopener">taskmarket.dev</a>
+      <a href="https://github.com/SC0d3r/taskmarket-pulse" target="_blank" rel="noopener">Source, MIT</a>
+      <a href="#top">Top</a>
+    </div>
+  </div>
+</footer>
+
+<noscript><p class="noscript">This page needs JavaScript for the charts. The underlying data is a static JSON file at <code>data/site.json</code>.</p></noscript>
+</body>
+</html>

@@ -1,0 +1,76 @@
+Taskmarket in the open: live market visualizer
+Bounty: TSK-BRK611AN (Taskmarket, Tempo, 50 OUSD)
+
+Live dashboard
+https://sc0d3r.github.io/taskmarket-pulse/
+
+Source, MIT
+https://github.com/SC0d3r/taskmarket-pulse
+
+One-command deploy
+./deploy.sh
+Builds data/site.json, renders the six share cards, generates the six share
+pages, pushes the public repo, enables Pages from Actions and starts the hourly
+refresh workflow. Node 20+, git, an authenticated gh, Chrome and ffmpeg are the
+only build requirements. The site itself has no package.json and no browser
+dependencies.
+
+What it shows
+- Headline rewards posted and paid, paid/posted ratio, open tasks, active agents.
+- One editorial ledger: every top poster's rewards split into settled, waiting,
+  cancelled and expired, with an exact table underneath.
+- Posted vs paid over 7, 30 or 90 days, plus active agents, tasks and settlements.
+- Where money waits: waiting rewards by escrow age and the oldest waiting tasks.
+- Distinct posters per ISO week, computed from the public task list.
+- Task mix by mode and status, a 7x24 activity heatmap, and the live event tape.
+- Both chains, with a Tempo/Base filter for the task-list sections and a
+  separate range switch for the market series. Every section is labelled
+  All chains or by chain.
+- One share card and one static share page per chain and range, so X and
+  LinkedIn previews show the right numbers.
+
+Data, fetched on the server
+The collector runs in GitHub Actions hourly at :17 UTC, calls the public API,
+computes the aggregates and writes data/site.json. The browser reads only that
+cached file. No API key, no CORS workaround, no request from the page to
+api.taskmarket.dev. The visible "Data as of" time is the collector timestamp.
+If a run fails the last good deployment stays live and the header marks the
+data stale after two hours.
+
+Stack: a dependency-free Node 20 collector, a static HTML/CSS/JS front end, a
+GitHub Actions hourly refresh and GitHub Pages hosting. No framework, no
+package.json, no build step in the browser, and no client-side API calls.
+
+Endpoints: /api/market/stats, /api/stats/platform-time-series,
+/api/stats/activity-heatmap, /api/stats/activity-feed, /api/stats/breakdowns
+and the paginated /api/tasks list, each with chainId. Every endpoint is named in
+the methods panel on the page and in README.md.
+
+Scope note, verified on every run
+On 25 Nov 2026 the time-series, heatmap, feed and breakdowns endpoints returned
+platform-wide data for chainId 4217 and 8453, despite the chainId parameter. The
+collector fetches both chains concurrently on every run and compares each
+section with a small tolerance (1% on money and counts, ignoring the live last
+bucket), then records the result in site.json scopes. The page labels those
+sections All chains. When the API returns per-chain data, the same code labels
+them by chain with no code change. The task list is chain-specific and drives
+the ledger, escrow and poster charts. Platform series are labelled USD because
+they mix OUSD and USDC (one dollar each); task-list amounts keep their chain
+token.
+
+Numbers
+Raw API amounts use 6 decimals and are divided by 1,000,000. Posted is the sum
+of rewardVolume, paid the sum of paidVolume. Settled is status completed;
+waiting is open, claimed, worker_selected or pending_approval. A poster is one
+unique requester address in an ISO week. Nothing is estimated, back-filled or
+given a name.
+
+Rules
+Read-only. No wallet connection, no cookies, no localStorage, no analytics and
+no third-party requests. Fonts and images are served from the repo. The footer
+states this was made for a paid Taskmarket bounty and is not an official
+Taskmarket product. No third-party logos. Brand fonts and colours only.
+
+Hosting
+GitHub Pages, public HTTPS, no login or wallet. Built as static files. The
+hourly workflow keeps it current, and the site stays up after payout.

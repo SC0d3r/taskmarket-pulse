@@ -1,0 +1,80 @@
+name: Refresh and deploy
+
+# The collector calls the Taskmarket API from the runner, never from the
+# browser. The generated JSON is deployed with the static site, so each visitor
+# reads one cached file and the API is hit at most once an hour.
+on:
+  schedule:
+    # Hourly at :17 UTC. The API's numbers are all-time or daily, so hourly is
+    # well above the once-per-hour requirement.
+    - cron: "17 * * * *"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Collect market data
+        run: |
+          for attempt in 1 2 3; do
+            if node scripts/collect.mjs data/site.json; then
+              exit 0
+            fi
+            echo "collect failed on attempt $attempt; retrying in 30s"
+            sleep 30
+          done
+          echo "collect failed three times; keeping the last successful deployment"
+          exit 1
+
+      - name: Ensure Chrome and ffmpeg
+        run: |
+          google-chrome --version || google-chrome-stable --version
+          ffmpeg -version >/dev/null || (sudo apt-get update && sudo apt-get install -y ffmpeg)
+
+      - name: Render share cards
+        run: node scripts/og.mjs
+
+      - name: Configure Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Generate share pages
+        env:
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
+        run: node scripts/share.mjs
+
+      - name: Upload the site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
